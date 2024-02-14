@@ -1,0 +1,56 @@
+info:
+  contact: {}
+paths:
+  /register:
+    post:
+      parameters:
+      - description: mail
+        in: formData
+        name: mail
+        required: true
+        type: string
+      - description: code
+        in: formData
+        name: code
+        required: true
+        type: string
+      - description: name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: password
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: registerTime
+        in: formData
+        name: registerTime
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{"code":"0"}'
+          schema:
+            type: string
+      summary: 注册新用户，第一个注册的用户是管理员
+      tags:
+      - 公共方法
+  /send-code:
+    post:
+      parameters:
+      - description: email
+        in: formData
+        name: email
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{"code":"0"}'
+          schema:
+            type: string
+      summary: 发送验证码
+      tags:
+      - 公共方法
+swagger: "2.0"
