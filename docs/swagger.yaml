@@ -1,12 +1,120 @@
 info:
   contact: {}
 paths:
+  /add-seek-help:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: document
+        in: formData
+        name: document
+        required: true
+        type: string
+      - description: time
+        in: formData
+        name: time
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{"code":"0"}'
+          schema:
+            type: string
+      summary: 新添加求助
+      tags:
+      - 用户方法
+  /delete-user:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: document
+        in: formData
+        name: document
+        required: true
+        type: string
+      - description: time
+        in: formData
+        name: time
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{"code":"0"}'
+          schema:
+            type: string
+      summary: 删除用户
+      tags:
+      - 管理员方法
+  /find-password:
+    post:
+      parameters:
+      - description: email
+        in: formData
+        name: email
+        required: true
+        type: string
+      - description: code
+        in: formData
+        name: code
+        required: true
+        type: string
+      - description: password
+        in: formData
+        name: password
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{"code":"0"}'
+          schema:
+            type: string
+      summary: 找回密码
+      tags:
+      - 公共方法
+  /login:
+    post:
+      parameters:
+      - description: loginType
+        in: formData
+        name: loginType
+        required: true
+        type: string
+      - description: nameOrMail
+        in: formData
+        name: nameOrMail
+        required: true
+        type: string
+      - description: authCode
+        in: formData
+        name: authCode
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{"code":"0"}'
+          schema:
+            type: string
+      summary: 用户登录
+      tags:
+      - 公共方法
   /register:
     post:
       parameters:
-      - description: mail
+      - description: email
         in: formData
-        name: mail
+        name: email
         required: true
         type: string
       - description: code
@@ -50,7 +158,7 @@ paths:
           description: '{"code":"0"}'
           schema:
             type: string
-      summary: 发送验证码
+      summary: 发送验证码(一个验证码只能处理一个操作，用完就要删除)
       tags:
       - 公共方法
 swagger: "2.0"

@@ -7,6 +7,7 @@ import (
 	math_rand "math/rand"
 
 	"github.com/lazyliqiquan/help_rookie/config"
+	"github.com/lazyliqiquan/help_rookie/middlewares"
 	"github.com/lazyliqiquan/help_rookie/models"
 	"github.com/lazyliqiquan/help_rookie/router"
 	"github.com/lazyliqiquan/help_rookie/service"
@@ -22,8 +23,9 @@ func main() {
 	if err != nil {
 		log.Fatalln("Init logger fail :", err)
 	}
-	models.DBInit(logger, config.Config)
-	service.ServiceInit(logger.Sugar())
+	models.Init(logger, config.Config)
+	middlewares.Init(logger.Sugar())
+	service.Init(logger.Sugar())
 	initRand()
 	r := router.Router(config.Config)
 	if config.Config.Debug {

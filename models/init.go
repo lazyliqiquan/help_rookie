@@ -1,6 +1,9 @@
 package models
 
 import (
+	"context"
+	"time"
+
 	"github.com/lazyliqiquan/help_rookie/config"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
@@ -14,7 +17,7 @@ var (
 	RDB    *redis.Client
 )
 
-func DBInit(loggerInstance *zap.Logger, config *config.WebConfig) {
+func Init(loggerInstance *zap.Logger, config *config.WebConfig) {
 	logger = loggerInstance
 	var err error
 	mysqlDsn := "root:" + config.MysqlPassword + "@tcp(" +
@@ -28,6 +31,11 @@ func DBInit(loggerInstance *zap.Logger, config *config.WebConfig) {
 	if err != nil {
 		logger.Fatal("Connect mysql fail : ", zap.Error(err))
 	}
+	sqlDB, err := DB.DB()
+	if err != nil {
+		logger.Fatal("Give sql.DB fail : ", zap.Error(err))
+	}
+	sqlDB.SetMaxIdleConns(config.MaxIdleConns)
 	err = DB.Exec("CREATE DATABASE IF NOT EXISTS help_cookie").Error
 	if err != nil {
 		logger.Fatal("Create database help_cookie fail : ", zap.Error(err))
@@ -36,7 +44,7 @@ func DBInit(loggerInstance *zap.Logger, config *config.WebConfig) {
 	if err != nil {
 		logger.Fatal("Unable to use the database help_cookie : ", zap.Error(err))
 	}
-	err = DB.AutoMigrate(&Users{}, &SeekHelps{}, &LendHands{}, &Documents{}, &Comments{})
+	err = DB.AutoMigrate(&Users{}, &SeekHelps{}, &LendHands{}, &Comments{})
 	if err != nil {
 		logger.Fatal("Create tables fail : ", zap.Error(err))
 	}
@@ -50,6 +58,11 @@ func DBInit(loggerInstance *zap.Logger, config *config.WebConfig) {
 		Addr:     redisDsn,
 		Password: "",
 	})
-	// TODO 一些网站的配置信息，因为信息量不多，并且需要经常访问，所以就将其持久化到redis中
+	WebGlobalParams := config.RedisInit()
+	for k, v := range WebGlobalParams {
+		if err := RDB.Set(context.Background(), k, v, time.Duration(0)).Err(); err != nil {
+			logger.Fatal("Set web global params fail : ", zap.Error(err))
+		}
+	}
 	logger.Sugar().Infoln("Help-cookie redis init succeed !")
 }

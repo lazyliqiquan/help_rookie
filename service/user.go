@@ -7,10 +7,80 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lazyliqiquan/help_rookie/config"
 	"github.com/lazyliqiquan/help_rookie/helper"
+	"github.com/lazyliqiquan/help_rookie/middlewares"
 	"github.com/lazyliqiquan/help_rookie/models"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
+
+// SendCode
+// @Tags 公共方法
+// @Summary 发送验证码(一个验证码只能处理一个操作，用完就要删除)
+// @Param email formData string true "email"
+// @Success 200 {string} json "{"code":"0"}"
+// @Router /send-code [post]
+func SendCode(c *gin.Context) {
+	email := c.PostForm("email")
+	if email == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "The mailbox cannot be empty",
+		})
+		return
+	}
+	// _, err := models.RDB.Get(c, email).Result()
+	ttlResult, err := models.RDB.TTL(c, email).Result()
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "The redis operation failed",
+		})
+		return
+	} else if ttlResult == time.Duration(-1) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "No expiration time is set for the current Key",
+		})
+		return
+	} else if ttlResult != time.Duration(-2) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "The verification code has not expired, please use the previous one",
+			"data": gin.H{
+				"ttl": ttlResult.Seconds(),
+			},
+		})
+		return
+	}
+	code := helper.GetRand()
+	err = helper.SendCode(email, code)
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "Failed to send the verification code",
+		})
+		return
+	}
+	err = models.RDB.Set(c, email, code,
+		time.Duration(config.Config.VerificationCodeDuration*int(time.Minute))).Err()
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "Unable to write data to redis",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "The verification code is sent successfully",
+		"data": gin.H{
+			"ttl": time.Duration(config.Config.VerificationCodeDuration * int(time.Minute)).Seconds(),
+		},
+	})
+}
 
 // Login
 // @Tags 公共方法
@@ -27,14 +97,13 @@ func Login(c *gin.Context) {
 	if helper.IsNuiStrs(loginType, nameOrMail, authCode) {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 1,
-			"msg":  "必填信息为空",
+			"msg":  "Incomplete information",
 		})
 		return
 	}
 	user := &models.Users{}
 	// 有三种登录方式：0 : 用户名+密码，1 : 邮箱+密码，2 : 邮箱+验证码
 	if loginType == "0" || loginType == "1" {
-		authCode = helper.GetMd5(authCode)
 		condition := "name"
 		if loginType == "1" {
 			condition = "email"
@@ -45,15 +114,15 @@ func Login(c *gin.Context) {
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
 				c.JSON(http.StatusOK, gin.H{
-					"code": 2,
-					"msg":  "用户名不存在或密码错误",
+					"code": 1,
+					"msg":  "The user name does not exist or the password is incorrect",
 				})
 				return
 			}
 			logger.Errorln(err)
 			c.JSON(http.StatusOK, gin.H{
-				"code": 2,
-				"msg":  "mysql操作失败",
+				"code": 1,
+				"msg":  "Mysql operation failure",
 			})
 			return
 		}
@@ -62,20 +131,21 @@ func Login(c *gin.Context) {
 		if err != nil {
 			if err == redis.Nil {
 				c.JSON(http.StatusOK, gin.H{
-					"code": 3,
-					"msg":  "邮箱不存在或验证码过期",
+					"code": 1,
+					"msg":  "The mailbox does not exist or the verification code has expired",
 				})
 			} else {
 				c.JSON(http.StatusOK, gin.H{
-					"code": 4,
-					"msg":  "redis操作失败",
+					"code": 1,
+					"msg":  "Redis operation failure",
 				})
 			}
 			return
-		} else if sysCode != authCode {
+		}
+		if sysCode != authCode {
 			c.JSON(http.StatusOK, gin.H{
-				"code": 5,
-				"msg":  "验证码不正确",
+				"code": 1,
+				"msg":  "The verification code is incorrect",
 			})
 			return
 		}
@@ -84,83 +154,37 @@ func Login(c *gin.Context) {
 		if err != nil {
 			logger.Errorln(err)
 			c.JSON(http.StatusOK, gin.H{
-				"code": 6,
-				"msg":  "邮箱不存在",
+				"code": 1,
+				"msg":  "Mailbox does not exist",
 			})
 			return
 		}
 	}
-	token, err := helper.GenerateToken(user.ID, user.Ban)
+	if (user.Ban & (1 << models.Login)) == 1 {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "The user has been banned",
+		})
+		return
+	}
+	token, err := middlewares.GenerateToken(user.ID, user.Ban)
 	if err != nil {
 		logger.Errorln(err)
 		c.JSON(http.StatusOK, gin.H{
-			"code": 7,
+			"code": 1,
 			"msg":  "Generate token fail",
 		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
-		"msg":  "登陆成功!",
-		"data": map[string]interface{}{
-			"token": token,
+		"msg":  "Login success!",
+		"data": gin.H{
+			"token":    token,
+			"name":     user.Name,
+			"password": user.Password,
+			"ban":      user.Ban, //前端根据用户权限，创建一些管理员特有的组件
 		},
-	})
-}
-
-// SendCode
-// @Tags 公共方法
-// @Summary 发送验证码
-// @Param email formData string true "email"
-// @Success 200 {string} json "{"code":"0"}"
-// @Router /send-code [post]
-func SendCode(c *gin.Context) {
-	email := c.PostForm("email")
-	if email == "" {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 1,
-			"msg":  "邮箱不能为空",
-		})
-		return
-	}
-	_, err := models.RDB.Get(c, email).Result()
-	if err == nil {
-		c.JSON(http.StatusOK, gin.H{
-			"code": 2,
-			"msg":  "请勿重复请求验证码，请使用之前的验证码",
-		})
-		return
-	} else if err != redis.Nil {
-		logger.Errorln(err)
-		c.JSON(http.StatusOK, gin.H{
-			"code": 3,
-			"msg":  "获取redis数据失败",
-		})
-		return
-	}
-	code := helper.GetRand()
-	err = helper.SendCode(email, code)
-	if err != nil {
-		logger.Errorln(err)
-		c.JSON(http.StatusOK, gin.H{
-			"code": 4,
-			"msg":  "发送验证码失败",
-		})
-		return
-	}
-	err = models.RDB.Set(c, email, code,
-		time.Duration(config.Config.VerificationCodeDuration*int(time.Minute))).Err()
-	if err != nil {
-		logger.Errorln(err)
-		c.JSON(http.StatusOK, gin.H{
-			"code": 5,
-			"msg":  "无法向redis写入数据",
-		})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"code": 0,
-		"msg":  "验证码发送成功",
 	})
 }
 
@@ -183,7 +207,7 @@ func Register(c *gin.Context) {
 	if helper.IsNuiStrs(email, userCode, name, password, registerTime) {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 1,
-			"msg":  "参数不正确",
+			"msg":  "Incomplete information",
 		})
 		return
 	}
@@ -192,40 +216,41 @@ func Register(c *gin.Context) {
 	if err != nil {
 		if err == redis.Nil {
 			c.JSON(http.StatusOK, gin.H{
-				"code": 2,
-				"msg":  "验证码已过期",
+				"code": 1,
+				"msg":  "The verification code has expired",
 			})
 		} else {
 			logger.Errorln(err)
 			c.JSON(http.StatusOK, gin.H{
-				"code": 3,
-				"msg":  "redis异常",
+				"code": 1,
+				"msg":  "Redis operation failure",
 			})
 		}
 		return
 	}
 	if sysCode != userCode {
 		c.JSON(http.StatusOK, gin.H{
-			"code": 4,
-			"msg":  "验证码不正确",
+			"code": 1,
+			"msg":  "The verification code is incorrect",
 		})
 		return
 	}
-	// 判断邮箱是否已存在
+	// 判断邮箱和用户名是否已存在
 	var cnt int64
-	err = models.DB.Model(&models.Users{}).Where("email = ? OR name = ?", email, name).Count(&cnt).Error
+	err = models.DB.Model(&models.Users{}).
+		Where("email = ? OR name = ?", email, name).Count(&cnt).Error
 	if err != nil {
 		logger.Errorln(err)
 		c.JSON(http.StatusOK, gin.H{
-			"code": 5,
-			"msg":  "mysql异常",
+			"code": 1,
+			"msg":  "Mysql operation failure",
 		})
 		return
 	}
 	if cnt > 0 {
 		c.JSON(http.StatusOK, gin.H{
-			"code": 6,
-			"msg":  "该邮箱已被注册",
+			"code": 1,
+			"msg":  "The email address or user name already exists",
 		})
 		return
 	}
@@ -234,20 +259,20 @@ func Register(c *gin.Context) {
 	if err != nil {
 		logger.Errorln(err)
 		c.JSON(http.StatusOK, gin.H{
-			"code": 5,
-			"msg":  "mysql异常",
+			"code": 1,
+			"msg":  "Mysql operation failure",
 		})
 		return
 	}
 	userBan := config.Config.UserBan
 	if userCount == 0 {
 		// 将第一位注册的用户升级为超级管理员
-		userBan |= 1
+		userBan ^= 1
 	}
 	user := &models.Users{
 		Name:         name,
 		Email:        email,
-		Password:     helper.GetMd5(password),
+		Password:     password,
 		Score:        config.Config.UserInitScore,
 		RegisterTime: registerTime,
 		Ban:          userBan,
@@ -256,17 +281,8 @@ func Register(c *gin.Context) {
 	if err != nil {
 		logger.Errorln(err)
 		c.JSON(http.StatusOK, gin.H{
-			"code": 5,
-			"msg":  "mysql异常",
-		})
-		return
-	}
-	token, err := helper.GenerateToken(user.ID, user.Ban)
-	if err != nil {
-		logger.Errorln(err)
-		c.JSON(http.StatusOK, gin.H{
-			"code": 6,
-			"msg":  "Token生成失败",
+			"code": 1,
+			"msg":  "Mysql operation failure",
 		})
 		return
 	}
@@ -277,9 +293,86 @@ func Register(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"code": 0,
-		"msg":  "账号注册成功",
-		"data": map[string]interface{}{
-			"token": token,
-		},
+		"msg":  "Account registration successful",
+	})
+}
+
+// FindPassword
+// @Tags 公共方法
+// @Summary 找回密码
+// @Param email formData string true "email"
+// @Param code formData string true "code"
+// @Param password formData string true "password"
+// @Success 200 {string} json "{"code":"0"}"
+// @Router /find-password [post]
+func FindPassword(c *gin.Context) {
+	email := c.PostForm("email")
+	userCode := c.PostForm("code")
+	password := c.PostForm("password")
+	if helper.IsNuiStrs(email, userCode, password) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "Incomplete information",
+		})
+		return
+	}
+	// 验证验证码是否正确
+	sysCode, err := models.RDB.Get(c, email).Result()
+	if err != nil {
+		if err == redis.Nil {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 1,
+				"msg":  "The verification code has expired",
+			})
+		} else {
+			logger.Errorln(err)
+			c.JSON(http.StatusOK, gin.H{
+				"code": 1,
+				"msg":  "Redis operation failure",
+			})
+		}
+		return
+	}
+	if sysCode != userCode {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "The verification code is incorrect",
+		})
+		return
+	}
+	user := &models.Users{}
+	err = models.DB.Model(&models.Users{}).Where("email = ?", email).First(user).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusOK, gin.H{
+				"code": 1,
+				"msg":  "Email not registered",
+			})
+			return
+		}
+		logger.Errorln(err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "Mysql operation failure",
+		})
+		return
+	}
+	err = models.DB.Model(&models.Users{}).Where(&models.Users{ID: user.ID}).
+		Update("password", password).Error
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "Mysql operation failure",
+		})
+		return
+	}
+	err = models.RDB.Unlink(c, email).Err()
+	if err != nil {
+		logger.Errorln(err)
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": 0,
+		"msg":  "Password changed successfully",
 	})
 }
