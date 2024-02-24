@@ -26,6 +26,13 @@ const docTemplate = `{
                 "summary": "新添加求助",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "type": "file",
                         "description": "File to upload",
                         "name": "file",
@@ -41,8 +48,22 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "time",
-                        "name": "time",
+                        "description": "language",
+                        "name": "language",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "score",
+                        "name": "score",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "createTime",
+                        "name": "createTime",
                         "in": "formData",
                         "required": true
                     }

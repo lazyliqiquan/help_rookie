@@ -28,20 +28,20 @@ func Router(config *config.WebConfig) *gin.Engine {
 	}
 	r.MaxMultipartMemory = config.MaxMultipartMemory << 20
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	// 公共方法
+	// 登录
 	r.POST("/login", service.Login)
-	r.POST("/send-code", service.SendCode)
-	r.POST("/register", service.Register)
-	r.POST("/find-password", service.FindPassword)
-	// 用户方法
-	userAuth := r.Group("/", middlewares.AuthCheck(middlewares.UserLevel))
-	userAuth.POST("/add-seek-help", service.AddSeekHelp)
-	// 管理员方法
-	adminAuth := r.Group("/", middlewares.AuthCheck(middlewares.UserLevel))
-	adminAuth.POST("/delete-user", service.DeleteUser)
-	// 超级管理员方法
-	// rootAuth := r.Group("/root", middlewares.AuthCheck(middlewares.UserLevel))
+	// 启动安全模式后，谁都不可以使用这些功能
+	anyoneAuth := r.Group("/", middlewares.OtherSafeModel())
+	anyoneAuth.POST("/send-code", service.SendCode)
+	anyoneAuth.POST("/register", service.Register)
+	anyoneAuth.POST("/find-password", service.FindPassword)
+	// 启动安全模式后，仅管理员可用
+	managerAuth := r.Group("/", middlewares.TokenSafeModel())
+	// 不需要登录的操作(有些操作后续可能被修改成需要登录，就单独判断一下就好了)
 
+	// todo 需要登录的操作(应该不会影响到之前的方法吧)
+	loginAuth := managerAuth.Group("/", middlewares.LoginModel())
+	loginAuth.POST("/add-seek-help", middlewares.PublishSeekHelp(), service.AddSeekHelp)
 	if !config.Debug {
 		err := r.RunTLS(config.WebPath, "assets/https/cert.pem", "assets/https/key.pem")
 		if err != nil {

@@ -160,14 +160,32 @@ func Login(c *gin.Context) {
 			return
 		}
 	}
-	if (user.Ban & (1 << models.Login)) == 1 {
+	// 检查一下用户被封禁没有
+	if !models.UserPermit(models.Login, user.Ban) {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 1,
 			"msg":  "The user has been banned",
 		})
 		return
 	}
-	token, err := middlewares.GenerateToken(user.ID, user.Ban)
+	// 上面是局部鉴权，下面是全局鉴权
+	safeBan, err := models.RDB.Get(c, "safeBan").Result()
+	if err != nil {
+		logger.Errorln(err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "Redis operation failed",
+		})
+		return
+	}
+	if safeBan != "permit" && !models.UserPermit(models.Root, user.Ban) {
+		c.JSON(http.StatusOK, gin.H{
+			"code": 1,
+			"msg":  "The website is currently in secure mode, and only administrators can log in",
+		})
+		return
+	}
+	token, err := middlewares.GenerateToken(user.ID)
 	if err != nil {
 		logger.Errorln(err)
 		c.JSON(http.StatusOK, gin.H{
@@ -264,10 +282,10 @@ func Register(c *gin.Context) {
 		})
 		return
 	}
-	userBan := config.Config.UserBan
+	userBan := 1
 	if userCount == 0 {
 		// 将第一位注册的用户升级为超级管理员
-		userBan ^= 1
+		userBan = 0
 	}
 	user := &models.Users{
 		Name:         name,

@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"log"
 	math_rand "math/rand"
+	"os"
 
 	"github.com/lazyliqiquan/help_rookie/config"
 	"github.com/lazyliqiquan/help_rookie/middlewares"
@@ -27,6 +28,7 @@ func main() {
 	middlewares.Init(logger.Sugar())
 	service.Init(logger.Sugar())
 	initRand()
+	initFiles(config.Config)
 	r := router.Router(config.Config)
 	if config.Config.Debug {
 		r.Run(config.Config.DebugWebPath)
@@ -44,4 +46,10 @@ func initRand() {
 	sd := int64(binary.LittleEndian.Uint64(b[:]))
 	logger.Sugar().Infof("random seed : %d ", sd)
 	math_rand.Seed(sd)
+}
+
+func initFiles(config *config.WebConfig) {
+	if err := os.MkdirAll(config.CodeFilePath, 0755); err != nil {
+		logger.Fatal("Init files create fail : ", zap.Error(err))
+	}
 }

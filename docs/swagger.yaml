@@ -6,6 +6,11 @@ paths:
       consumes:
       - multipart/form-data
       parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: File to upload
         in: formData
         name: file
@@ -16,9 +21,19 @@ paths:
         name: document
         required: true
         type: string
-      - description: time
+      - description: language
         in: formData
-        name: time
+        name: language
+        required: true
+        type: string
+      - description: score
+        in: formData
+        name: score
+        required: true
+        type: string
+      - description: createTime
+        in: formData
+        name: createTime
         required: true
         type: string
       responses:

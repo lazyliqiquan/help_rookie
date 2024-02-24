@@ -2,14 +2,11 @@ package middlewares
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/lazyliqiquan/help_rookie/config"
-	"github.com/lazyliqiquan/help_rookie/models"
 	"go.uber.org/zap"
 )
 
@@ -28,8 +25,7 @@ var (
 
 // 用来生成token的结构，主要用来鉴权
 type UserClaims struct {
-	Id  int
-	Ban int
+	Id int //只有用户id是不会变的
 	jwt.StandardClaims
 }
 
@@ -43,62 +39,13 @@ func init() {
 	TokenPrivateKey = []byte(uuid.New().String())
 }
 
-func AuthCheck(authType AuthType) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		auth := c.GetHeader("Authorization")
-		if auth == "" {
-			c.JSON(http.StatusOK, gin.H{
-				"code": 1,
-				"msg":  "Unauthorized",
-			})
-			return
-		}
-		userClaim, err := AnalyseToken(auth)
-		if err != nil {
-			logger.Errorln(err)
-			c.JSON(http.StatusOK, gin.H{
-				"code": 1,
-				"msg":  "Operation failed, please log in first",
-			})
-			return
-		}
-		if !models.IsLogin(userClaim.Ban) {
-			c.JSON(http.StatusOK, gin.H{
-				"code": 1,
-				"msg":  "The user has been banned",
-			})
-			return
-		}
-		if authType == AdminLevel {
-			if !models.IsAdmin(userClaim.Ban) {
-				c.JSON(http.StatusOK, gin.H{
-					"code": 1,
-					"msg":  "Operation failed. Administrator rights required",
-				})
-				return
-			}
-		} else if authType == RootLevel {
-			if !models.IsRoot(userClaim.Ban) {
-				c.JSON(http.StatusOK, gin.H{
-					"code": 1,
-					"msg":  "Operation failed. Root rights required",
-				})
-				return
-			}
-		}
-		c.Set("id", userClaim.Id)
-		c.Set("ban", userClaim.Ban)
-		c.Next()
-	}
-}
-
+// 好像每次程序重新启动，之前的token全部失效了
 // 生成 token
-func GenerateToken(id, ban int) (string, error) {
+func GenerateToken(id int) (string, error) {
 	UserClaim := &UserClaims{
-		Id:  id,
-		Ban: ban,
+		Id: id,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: config.Config.TokenDuration * int64(time.Hour),
+			ExpiresAt: time.Now().Add(time.Duration(config.Config.TokenDuration * int64(time.Hour))).Unix(),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaim)
