@@ -21,9 +21,11 @@ type Users struct {
 	Name         string
 	Email        string
 	Password     string
+	Avatar       string
 	Score        int
 	RegisterTime string
 	Ban          int
+	Message      GormIntList
 	SeekHelps    []SeekHelps `gorm:"foreignKey:UsersID"`
 	LendHands    []LendHands `gorm:"foreignKey:UsersID"`
 }

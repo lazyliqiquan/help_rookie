@@ -13,13 +13,14 @@ const (
 
 type LendHands struct {
 	ID          int `gorm:"primaryKey"`
-	Document    string
 	CreateTime  string
 	UpdateTime  string
 	CodePath    string
 	DiffPath    string
 	Status      bool
 	Like        GormIntList
+	Document    string
+	ImagePath   GormStrList
 	Ban         int
 	UsersID     int
 	SeekHelpsID int

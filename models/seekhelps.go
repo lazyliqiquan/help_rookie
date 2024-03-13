@@ -11,15 +11,17 @@ const (
 
 type SeekHelps struct {
 	ID         int `gorm:"primaryKey"`
-	Document   string
 	Score      int
 	CreateTime string
 	UpdateTime string
 	CodePath   string
 	Language   string
 	Like       GormIntList
-	Ban        int
+	PageView   int
 	Status     bool
+	Document   string
+	ImagePath  GormStrList
+	Ban        int
 	UsersID    int
 	LendHands  []LendHands `gorm:"foreignKey:SeekHelpsID"`
 	Comments   []Comments  `gorm:"foreignKey:SeekHelpsID"`
