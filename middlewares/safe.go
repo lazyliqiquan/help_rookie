@@ -19,7 +19,6 @@ func TokenSafeModel() gin.HandlerFunc {
 				"msg":  "Redis operation failed",
 			})
 			c.Abort()
-			return
 		}
 		var userClaim *UserClaims
 		var userClaimErr error
@@ -40,31 +39,28 @@ func TokenSafeModel() gin.HandlerFunc {
 						"msg":  "Mysql operation failed",
 					})
 					c.Abort()
-					return
 				}
 				// 局部检查该用户是否被封禁
-				// 虽然login那里就已经判断了，但是可能会出现用户登陆后，管理员在token过期之前才封禁的情况
-				if !models.UserPermit(models.Login, userBan) {
+				// 虽然login那里就已经判断了，但是可能会出现用户登陆后，管理员在token过期之前进行封禁的情况
+				if !models.JudgePermit(models.Login, userBan) {
 					c.JSON(http.StatusOK, gin.H{
 						"code": 1,
 						"msg":  "The user has been banned",
 					})
 					c.Abort()
-					return
 				}
 				c.Set("id", userClaim.Id)
 				c.Set("ban", userBan)
 			}
 		}
-		if safeBan != "permit" && (auth == "" || userClaimErr != nil || !models.UserPermit(models.Root, userBan)) {
+		if safeBan != "permit" && (auth == "" || userClaimErr != nil || !models.JudgePermit(models.Admin, userBan)) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "The website is currently in safe mode and can only be operated by administrators",
 			})
 			c.Abort()
-			return
 		}
-		logger.Infoln("TokenSafeModel -> ")
+		logger.Infoln("TokenSafeModel")
 		c.Next()
 	}
 }
@@ -80,7 +76,6 @@ func OtherSafeModel() gin.HandlerFunc {
 				"msg":  "Redis operation failed",
 			})
 			c.Abort()
-			return
 		}
 		if safeBan != "permit" {
 			c.JSON(http.StatusOK, gin.H{
@@ -88,8 +83,8 @@ func OtherSafeModel() gin.HandlerFunc {
 				"msg":  "The site is currently in safe mode and this feature is not available",
 			})
 			c.Abort()
-			return
 		}
+		logger.Infoln("otherSafeModel")
 		c.Next()
 	}
 }
@@ -105,7 +100,6 @@ func LoginModel() gin.HandlerFunc {
 				"msg":  "Login is required for this operation",
 			})
 			c.Abort()
-			return
 		}
 		logger.Infoln("LoginModel")
 		c.Next()

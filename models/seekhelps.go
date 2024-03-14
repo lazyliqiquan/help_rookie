@@ -1,8 +1,8 @@
 package models
 
+// 如果该求助已经有用户帮助，那么该求助帖子不能再修改
 const (
-	SOthersView  int = iota //非所有者浏览
-	SUserView               //所有者浏览
+	SView        int = iota //浏览
 	SEdit                   //修改
 	SViewComment            //浏览评论
 	SAddComment             //添加评论
@@ -21,6 +21,7 @@ type SeekHelps struct {
 	Status     bool
 	Document   string
 	ImagePath  GormStrList
+	Tags       GormStrList
 	Ban        int
 	UsersID    int
 	LendHands  []LendHands `gorm:"foreignKey:SeekHelpsID"`

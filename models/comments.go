@@ -1,10 +1,15 @@
 package models
 
+const (
+	CView int = iota //浏览
+)
+
 type Comments struct {
 	ID          int `gorm:"primaryKey"`
 	Text        string
 	SendTime    string
-	Status      bool //false 可以浏览 true 不可浏览
+	Like        GormIntList
+	Ban         int
 	SeekHelpsID int
 	LendHandsID int
 	UsersId     int

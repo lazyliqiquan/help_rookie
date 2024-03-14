@@ -37,7 +37,7 @@ func Router(config *config.WebConfig) *gin.Engine {
 	anyoneAuth.POST("/find-password", service.FindPassword)
 	// 启动安全模式后，仅管理员可用
 	managerAuth := r.Group("/", middlewares.TokenSafeModel())
-	// 不需要登录的操作(有些操作后续可能被修改成需要登录，就单独判断一下就好了)
+	managerAuth.POST("seek-help-list", service.RequestSeekHelpList)
 
 	// todo 需要登录的操作(应该不会影响到之前的方法吧)
 	loginAuth := managerAuth.Group("/", middlewares.LoginModel())

@@ -18,27 +18,25 @@ func PublishSeekHelp() gin.HandlerFunc {
 				"msg":  "Redis operation failed",
 			})
 			c.Abort()
-			return
 		}
 		userBan := c.GetInt("ban")
 		// 全局判断
-		if publishSeekHelpBan != "permit" && !models.UserPermit(models.Root, userBan) {
+		if publishSeekHelpBan != "permit" && !models.JudgePermit(models.Admin, userBan) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "The website is currently in safe mode and can only be operated by administrators",
 			})
 			c.Abort()
-			return
 		}
 		// 局部判断
-		if !models.UserPermit(models.PublishSeekHelp, userBan) {
+		if !models.JudgePermit(models.PublishSeekHelp, userBan) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "You do not have permission to seek help",
 			})
 			c.Abort()
-			return
 		}
+		logger.Infoln("PublishSeekHelp")
 		c.Next()
 	}
 }
@@ -53,32 +51,30 @@ func EditSeekHelp() gin.HandlerFunc {
 				"msg":  "Redis operation failed",
 			})
 			c.Abort()
-			return
 		}
 		userBan := c.GetInt("ban")
 		// 全局判断
-		if editSeekHelpBan != "permit" && !models.UserPermit(models.Root, userBan) {
+		if editSeekHelpBan != "permit" && !models.JudgePermit(models.Admin, userBan) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "The website is currently in safe mode and can only be operated by administrators",
 			})
 			c.Abort()
-			return
 		}
 		// 局部判断
-		if !models.UserPermit(models.PublishSeekHelp, userBan) {
+		if !models.JudgePermit(models.EditSeekHelp, userBan) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "You do not have permission to modify",
 			})
 			c.Abort()
-			return
 		}
+		logger.Infoln("EditSeekHelp")
 		c.Next()
 	}
 }
 
-// 也许不需要登录
+// 可能需要登录
 func ViewSeekHelp() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		viewSeekHelpBan, err := models.RDB.Get(c, "viewSeekHelpBan").Result()
@@ -89,7 +85,6 @@ func ViewSeekHelp() gin.HandlerFunc {
 				"msg":  "Redis operation failed",
 			})
 			c.Abort()
-			return
 		}
 		loginViewSeekHelpBan, err := models.RDB.Get(c, "loginViewSeekHelpBan").Result()
 		if err != nil {
@@ -99,27 +94,25 @@ func ViewSeekHelp() gin.HandlerFunc {
 				"msg":  "Redis operation failed",
 			})
 			c.Abort()
-			return
 		}
 		userId := c.GetInt("id")
 		userBan := c.GetInt("ban")
 		// 全局判断
-		if viewSeekHelpBan != "permit" && (userId == 0 || !models.UserPermit(models.Root, userBan)) {
+		if viewSeekHelpBan != "permit" && (userId == 0 || !models.JudgePermit(models.Admin, userBan)) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "The website is currently in safe mode and can only be operated by administrators",
 			})
 			c.Abort()
-			return
 		}
-		if loginViewSeekHelpBan != "permit" && (userId == 0 || !models.UserPermit(models.ViewSeekHelp, userBan)) {
+		if loginViewSeekHelpBan != "permit" && (userId == 0 || !models.JudgePermit(models.Login, userBan)) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "You are not logged in or do not have browsing rights",
 			})
 			c.Abort()
-			return
 		}
+		logger.Infoln("ViewSeekHelp")
 		c.Next()
 	}
 }

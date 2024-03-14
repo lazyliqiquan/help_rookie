@@ -22,7 +22,7 @@ func PublishLendHand() gin.HandlerFunc {
 		}
 		userBan := c.GetInt("ban")
 		// 全局判断
-		if publishLendHandBan != "permit" && !models.UserPermit(models.Root, userBan) {
+		if publishLendHandBan != "permit" && !models.JudgePermit(models.Admin, userBan) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "The website is currently in safe mode and can only be operated by administrators",
@@ -31,7 +31,7 @@ func PublishLendHand() gin.HandlerFunc {
 			return
 		}
 		// 局部判断
-		if !models.UserPermit(models.PublishLendHand, userBan) {
+		if !models.JudgePermit(models.PublishLendHand, userBan) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "You do not have permission to lend hand",
@@ -57,7 +57,7 @@ func EditLendHand() gin.HandlerFunc {
 		}
 		userBan := c.GetInt("ban")
 		// 全局判断
-		if editLendHandBan != "permit" && !models.UserPermit(models.Root, userBan) {
+		if editLendHandBan != "permit" && !models.JudgePermit(models.Admin, userBan) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "The website is currently in safe mode and can only be operated by administrators",
@@ -66,7 +66,7 @@ func EditLendHand() gin.HandlerFunc {
 			return
 		}
 		// 局部判断
-		if !models.UserPermit(models.EditLendHand, userBan) {
+		if !models.JudgePermit(models.EditLendHand, userBan) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "You do not have permission to modify",
@@ -104,7 +104,7 @@ func ViewLendHand() gin.HandlerFunc {
 		userId := c.GetInt("id")
 		userBan := c.GetInt("ban")
 		// 全局判断
-		if viewLendHandBan != "permit" && (userId == 0 || !models.UserPermit(models.Root, userBan)) {
+		if viewLendHandBan != "permit" && (userId == 0 || !models.JudgePermit(models.Admin, userBan)) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "The website is currently in safe mode and can only be operated by administrators",
@@ -112,7 +112,7 @@ func ViewLendHand() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if loginViewLendHandBan != "permit" && (userId == 0 || !models.UserPermit(models.ViewLendHand, userBan)) {
+		if loginViewLendHandBan != "permit" && (userId == 0 || !models.JudgePermit(models.Login, userBan)) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "You are not logged in or do not have browsing rights",

@@ -161,7 +161,7 @@ func Login(c *gin.Context) {
 		}
 	}
 	// 检查一下用户被封禁没有
-	if !models.UserPermit(models.Login, user.Ban) {
+	if !models.JudgePermit(models.Login, user.Ban) {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 1,
 			"msg":  "The user has been banned",
@@ -178,7 +178,7 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
-	if safeBan != "permit" && !models.UserPermit(models.Root, user.Ban) {
+	if safeBan != "permit" && !models.JudgePermit(models.Admin, user.Ban) {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 1,
 			"msg":  "The website is currently in secure mode, and only administrators can log in",

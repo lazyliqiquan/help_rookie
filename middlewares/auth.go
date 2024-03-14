@@ -1,22 +1,17 @@
 package middlewares
 
 import (
-	"fmt"
+	"context"
+	"errors"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
-	"github.com/lazyliqiquan/help_rookie/config"
+	"github.com/lazyliqiquan/help_rookie/models"
 	"go.uber.org/zap"
 )
 
 type AuthType int
-
-const (
-	UserLevel AuthType = iota
-	AdminLevel
-	RootLevel
-)
 
 var (
 	TokenPrivateKey []byte //token加密私钥
@@ -42,10 +37,14 @@ func init() {
 // 好像每次程序重新启动，之前的token全部失效了
 // 生成 token
 func GenerateToken(id int) (string, error) {
+	tokenDuration, err := models.RDB.Get(context.Background(), "tokenDuration").Int()
+	if err != nil {
+		return "", err
+	}
 	UserClaim := &UserClaims{
 		Id: id,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Duration(config.Config.TokenDuration * int64(time.Hour))).Unix(),
+			ExpiresAt: time.Now().Add(time.Duration(tokenDuration * int(time.Hour))).Unix(),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaim)
@@ -67,7 +66,7 @@ func AnalyseToken(tokenString string) (*UserClaims, error) {
 		return nil, err
 	}
 	if !claims.Valid {
-		return nil, fmt.Errorf("Analyse token fail")
+		return nil, errors.New("analyse token fail")
 	}
 	return userClaim, nil
 }

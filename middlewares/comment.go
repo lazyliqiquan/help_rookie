@@ -17,7 +17,6 @@ func ViewComment() gin.HandlerFunc {
 				"msg":  "Redis operation failed",
 			})
 			c.Abort()
-			return
 		}
 		loginViewCommentBan, err := models.RDB.Get(c, "loginViewCommentBan").Result()
 		if err != nil {
@@ -27,27 +26,23 @@ func ViewComment() gin.HandlerFunc {
 				"msg":  "Redis operation failed",
 			})
 			c.Abort()
-			return
 		}
 		userId := c.GetInt("id")
 		userBan := c.GetInt("ban")
-
 		// 全局判断
-		if viewCommentBan != "permit" && (userId == 0 || !models.UserPermit(models.Root, userBan)) {
+		if viewCommentBan != "permit" && (userId == 0 || !models.JudgePermit(models.Admin, userBan)) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "The website is currently in safe mode and can only be operated by administrators",
 			})
 			c.Abort()
-			return
 		}
-		if loginViewCommentBan != "permit" && (userId == 0 || !models.UserPermit(models.ViewComment, userBan)) {
+		if loginViewCommentBan != "permit" && (userId == 0 || !models.JudgePermit(models.Login, userBan)) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "You are not logged in or do not have browsing rights",
 			})
 			c.Abort()
-			return
 		}
 		c.Next()
 	}
@@ -76,7 +71,7 @@ func PublishComment() gin.HandlerFunc {
 		}
 		userId := c.GetInt("id")
 		userBan := c.GetInt("ban")
-		if PublishCommentBan != "permit" && (userId == 0 || !models.UserPermit(models.Root, userBan)) {
+		if PublishCommentBan != "permit" && (userId == 0 || !models.JudgePermit(models.Login, userBan)) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "The website is currently in safe mode and can only be operated by administrators",
@@ -84,7 +79,7 @@ func PublishComment() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if loginPublishCommentBan != "permit" && (userId == 0 || !models.UserPermit(models.PublishComment, userBan)) {
+		if loginPublishCommentBan != "permit" && (userId == 0 || !models.JudgePermit(models.PublishComment, userBan)) {
 			c.JSON(http.StatusOK, gin.H{
 				"code": 1,
 				"msg":  "You do not have permission to post a comment",
