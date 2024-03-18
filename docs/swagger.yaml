@@ -1,49 +1,6 @@
 info:
   contact: {}
 paths:
-  /add-seek-help:
-    post:
-      consumes:
-      - multipart/form-data
-      parameters:
-      - description: Authentication header
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: File to upload
-        in: formData
-        name: file
-        required: true
-        type: file
-      - description: document
-        in: formData
-        name: document
-        required: true
-        type: string
-      - description: language
-        in: formData
-        name: language
-        required: true
-        type: string
-      - description: score
-        in: formData
-        name: score
-        required: true
-        type: string
-      - description: createTime
-        in: formData
-        name: createTime
-        required: true
-        type: string
-      responses:
-        "200":
-          description: '{"code":"0"}'
-          schema:
-            type: string
-      summary: 新添加求助
-      tags:
-      - 用户方法
   /delete-user:
     post:
       consumes:
@@ -124,6 +81,37 @@ paths:
       summary: 用户登录
       tags:
       - 公共方法
+  /preEdit:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: editOption
+        in: formData
+        name: editOption
+        required: true
+        type: string
+      - description: seekHelpId
+        in: formData
+        name: seekHelpId
+        type: string
+      - description: lendHandId
+        in: formData
+        name: lendHandId
+        type: string
+      responses:
+        "200":
+          description: '{"code":"0"}'
+          schema:
+            type: string
+      summary: 检测编辑权限并获取环境配置
+      tags:
+      - 用户方法
   /register:
     post:
       parameters:
@@ -158,6 +146,49 @@ paths:
           schema:
             type: string
       summary: 注册新用户，第一个注册的用户是管理员
+      tags:
+      - 公共方法
+  /seek-help-list:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: baseOffset
+        in: formData
+        name: baseOffset
+        required: true
+        type: string
+      - description: size
+        in: formData
+        name: size
+        required: true
+        type: string
+      - description: sortOption
+        in: formData
+        name: sortOption
+        required: true
+        type: string
+      - description: language
+        in: formData
+        name: language
+        required: true
+        type: string
+      - description: status
+        in: formData
+        name: status
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{"code":"0"}'
+          schema:
+            type: string
+      summary: 请求求助列表
       tags:
       - 公共方法
   /send-code:

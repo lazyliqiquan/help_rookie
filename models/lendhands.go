@@ -21,7 +21,11 @@ type LendHands struct {
 	Document    string
 	ImagePath   GormStrList
 	Ban         int
+	LikeSum     int
+	CommentSum  int
 	UsersID     int
+	Users       Users
 	SeekHelpsID int
-	Comments    []Comments `gorm:"foreignKey:LendHandsID"`
+	SeekHelps   SeekHelps
+	Comments    []Comments //`gorm:"foreignKey:LendHandsID"`
 }

@@ -26,7 +26,7 @@ func Router(config *config.WebConfig) *gin.Engine {
 			MaxAge:           12 * time.Hour,
 		}))
 	}
-	r.MaxMultipartMemory = config.MaxMultipartMemory << 20
+	r.MaxMultipartMemory = int64(config.MaxMultipartMemory) << 20
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 	// 登录
 	r.POST("/login", service.Login)
@@ -37,11 +37,15 @@ func Router(config *config.WebConfig) *gin.Engine {
 	anyoneAuth.POST("/find-password", service.FindPassword)
 	// 启动安全模式后，仅管理员可用
 	managerAuth := r.Group("/", middlewares.TokenSafeModel())
-	managerAuth.POST("seek-help-list", service.RequestSeekHelpList)
+	managerAuth.POST("/seek-help-list", service.RequestSeekHelpList)
 
 	// todo 需要登录的操作(应该不会影响到之前的方法吧)
 	loginAuth := managerAuth.Group("/", middlewares.LoginModel())
-	loginAuth.POST("/add-seek-help", middlewares.PublishSeekHelp(), service.AddSeekHelp)
+	// 需要编辑权限的操作
+	editAuth := loginAuth.Group("/", middlewares.JudgeEdit())
+	editAuth.POST("/preEdit", service.PreEdit)
+
+	// loginAuth.POST("/add-seek-help", middlewares.PublishSeekHelp(), service.AddSeekHelp)
 	if !config.Debug {
 		err := r.RunTLS(config.WebPath, "assets/https/cert.pem", "assets/https/key.pem")
 		if err != nil {

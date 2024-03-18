@@ -60,8 +60,14 @@ func Init(loggerInstance *zap.Logger, config *config.WebConfig) {
 	})
 	WebGlobalParams := config.RedisInit()
 	for k, v := range WebGlobalParams {
-		if err := RDB.Set(context.Background(), k, v, time.Duration(0)).Err(); err != nil {
-			logger.Fatal("Set web global config fail : ", zap.Error(err))
+		if _, ok := v.(string); ok {
+			if err := RDB.Set(context.Background(), k, v.(string), time.Duration(0)).Err(); err != nil {
+				logger.Fatal("Set web global config fail : ", zap.Error(err))
+			}
+		} else {
+			if err := RDB.Set(context.Background(), k, v.(int), time.Duration(0)).Err(); err != nil {
+				logger.Fatal("Set web global config fail : ", zap.Error(err))
+			}
 		}
 	}
 	// 启动一个协程来每天重置网站配置
@@ -96,7 +102,6 @@ func resetWebConfig() {
 	result, err := RDB.MGet(context.Background(), keys...).Result()
 	if err != nil {
 		logger.Sugar().Errorln(err)
-		// 有错误就直接退出该协程，那么网站配置就不能重置了，只能重启找bug了
 		return
 	}
 	m := map[string]any{
@@ -105,5 +110,7 @@ func resetWebConfig() {
 		"todayShareCodeSurplus": result[2],
 	}
 	err = RDB.MSet(context.Background(), m).Err()
-	logger.Sugar().Errorln(err)
+	if err != nil {
+		logger.Sugar().Errorln(err)
+	}
 }

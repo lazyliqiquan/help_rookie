@@ -18,16 +18,16 @@ type Users struct {
 	Email           string
 	Password        string
 	Avatar          string
-	Score           int
+	Reward          int
 	RegisterTime    string
 	CommentSurplus  int
 	LastPublishDate string
 	Ban             int
-	Message         GormIntList
+	Message         GormIntList //保存lendHandId
 	SeekHelpCollect GormIntList
 	LendHandCollect GormIntList
-	SeekHelps       []SeekHelps `gorm:"foreignKey:UsersID"`
-	LendHands       []LendHands `gorm:"foreignKey:UsersID"`
+	SeekHelps       []SeekHelps //`gorm:"foreignKey:UsersID"`
+	LendHands       []LendHands //`gorm:"foreignKey:UsersID"`
 }
 
 func JudgePermit(option, ban int) bool {

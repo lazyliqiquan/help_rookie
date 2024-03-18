@@ -10,20 +10,24 @@ const (
 )
 
 type SeekHelps struct {
-	ID         int `gorm:"primaryKey"`
-	Score      int
-	CreateTime string
-	UpdateTime string
-	CodePath   string
-	Language   string
-	Like       GormIntList
-	PageView   int
-	Status     bool
-	Document   string
-	ImagePath  GormStrList
-	Tags       GormStrList
-	Ban        int
-	UsersID    int
-	LendHands  []LendHands `gorm:"foreignKey:SeekHelpsID"`
-	Comments   []Comments  `gorm:"foreignKey:SeekHelpsID"`
+	ID          int `gorm:"primaryKey"`
+	Reward      int
+	CreateTime  string
+	UpdateTime  string
+	CodePath    string
+	Language    string
+	Like        GormIntList
+	PageView    int
+	Status      bool
+	Document    string
+	ImagePath   GormStrList
+	Tags        GormStrList
+	Ban         int
+	LikeSum     int
+	LendHandSum int
+	CommentSum  int
+	UsersID     int
+	Users       Users
+	LendHands   []LendHands //`gorm:"foreignKey:SeekHelpsID"`
+	Comments    []Comments  //`gorm:"foreignKey:SeekHelpsID"`
 }

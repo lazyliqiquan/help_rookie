@@ -291,7 +291,7 @@ func Register(c *gin.Context) {
 		Name:         name,
 		Email:        email,
 		Password:     password,
-		Score:        config.Config.UserInitScore,
+		Reward:       config.Config.UserInitReward,
 		RegisterTime: registerTime,
 		Ban:          userBan,
 	}
