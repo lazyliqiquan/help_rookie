@@ -21,7 +21,7 @@ type SeekHelps struct {
 	Status      bool
 	Document    string
 	ImagePath   GormStrList
-	Tags        GormStrList
+	Tags        string
 	Ban         int
 	LikeSum     int
 	LendHandSum int

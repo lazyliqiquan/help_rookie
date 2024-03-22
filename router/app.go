@@ -44,8 +44,8 @@ func Router(config *config.WebConfig) *gin.Engine {
 	// 需要编辑权限的操作
 	editAuth := loginAuth.Group("/", middlewares.JudgeEdit())
 	editAuth.POST("/preEdit", service.PreEdit)
+	editAuth.POST("/add-seek-help", service.AddSeekHelp)
 
-	// loginAuth.POST("/add-seek-help", middlewares.PublishSeekHelp(), service.AddSeekHelp)
 	if !config.Debug {
 		err := r.RunTLS(config.WebPath, "assets/https/cert.pem", "assets/https/key.pem")
 		if err != nil {

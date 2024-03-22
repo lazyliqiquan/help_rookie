@@ -20,6 +20,7 @@ type LendHands struct {
 	Like        GormIntList
 	Document    string
 	ImagePath   GormStrList
+	Tags        GormStrList
 	Ban         int
 	LikeSum     int
 	CommentSum  int
