@@ -12,6 +12,7 @@ const (
 type SeekHelps struct {
 	ID          int `gorm:"primaryKey"`
 	Reward      int
+	Title       string
 	CreateTime  string
 	UpdateTime  string
 	CodePath    string

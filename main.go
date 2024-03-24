@@ -49,7 +49,10 @@ func initRand() {
 }
 
 func initFiles(config *config.WebConfig) {
-	if err := os.MkdirAll(config.CodeFilePath, 0755); err != nil {
-		logger.Fatal("Init files create fail : ", zap.Error(err))
+	dirs := []string{config.CodeFilePath, config.ImageFilePath, config.AvatarFilePath}
+	for _, v := range dirs {
+		if err := os.MkdirAll(v, 0755); err != nil {
+			logger.Fatal("Init files create fail : ", zap.Error(err))
+		}
 	}
 }

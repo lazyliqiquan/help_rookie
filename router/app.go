@@ -38,6 +38,7 @@ func Router(config *config.WebConfig) *gin.Engine {
 	// 启动安全模式后，仅管理员可用
 	managerAuth := r.Group("/", middlewares.TokenSafeModel())
 	managerAuth.POST("/seek-help-list", service.RequestSeekHelpList)
+	managerAuth.POST("/download-file", service.DownloadFile)
 
 	// todo 需要登录的操作(应该不会影响到之前的方法吧)
 	loginAuth := managerAuth.Group("/", middlewares.LoginModel())

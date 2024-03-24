@@ -29,6 +29,33 @@ paths:
       summary: 删除用户
       tags:
       - 管理员方法
+  /download-file:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: Authentication header
+        in: header
+        name: Authorization
+        type: string
+      - description: filePath
+        in: formData
+        name: filePath
+        required: true
+        type: string
+      - description: status
+        in: formData
+        name: status
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{"code":"0"}'
+          schema:
+            type: string
+      summary: 下载指定路径的文件
+      tags:
+      - 公共方法
   /find-password:
     post:
       parameters:
@@ -156,7 +183,6 @@ paths:
       - description: Authentication header
         in: header
         name: Authorization
-        required: true
         type: string
       - description: baseOffset
         in: formData

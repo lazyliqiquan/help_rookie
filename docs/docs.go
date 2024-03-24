@@ -57,6 +57,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/download-file": {
+            "post": {
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "tags": [
+                    "公共方法"
+                ],
+                "summary": "下载指定路径的文件",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Authentication header",
+                        "name": "Authorization",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filePath",
+                        "name": "filePath",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "status",
+                        "name": "status",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":\"0\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/find-password": {
             "post": {
                 "tags": [
@@ -249,8 +290,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Authentication header",
                         "name": "Authorization",
-                        "in": "header",
-                        "required": true
+                        "in": "header"
                     },
                     {
                         "type": "string",

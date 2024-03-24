@@ -14,7 +14,7 @@ import (
 // @Summary 请求求助列表
 // @Accept multipart/form-data
 //
-//	@Param Authorization header string true	"Authentication header"
+//	@Param Authorization header string false "Authentication header"
 //
 // @Param baseOffset formData string true "baseOffset"
 // @Param size formData string true "size"
@@ -85,8 +85,11 @@ func RequestSeekHelpList(c *gin.Context) {
 	} else {
 		tx = tx.Order("lend_hand_sum DESC")
 	}
-	if err := tx.Offset(baseOffset).Limit(size).Preload("Users.Avatar").
-		Omit("update_time", "code_path", "like", "page_view", "document", "image_path", "users_id").
+	if err := tx.Offset(baseOffset).Limit(size).Preload("Users", func(tx *gorm.DB) *gorm.DB {
+		// 好像必须要包含id
+		return tx.Select("id,avatar")
+	}). //好像需要userId，所以不能忽略用户id
+		Omit("update_time", "code_path", "like", "page_view", "document", "image_path").
 		Find(&seekHelps).Error; err != nil {
 		if err != gorm.ErrRecordNotFound {
 			logger.Errorln(err)

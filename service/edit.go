@@ -24,7 +24,8 @@ func AddSeekHelp(c *gin.Context) {
 	language := c.PostForm("language")
 	uploadTime := c.PostForm("uploadTime")
 	tags := c.PostForm("tags")
-	if helper.IsNuiStrs(_imageNum, _reward, document, language, uploadTime) {
+	title := c.PostForm("title")
+	if helper.IsNuiStrs(_imageNum, title, _reward, document, language, uploadTime) {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 1,
 			"msg":  "Parameter null",
@@ -75,6 +76,7 @@ func AddSeekHelp(c *gin.Context) {
 		return
 	}
 	imageFiles := []multipart.File{}
+	imageFilesPath := []string{}
 	for i := 0; i < imageNum; i++ {
 		file, _, err := c.Request.FormFile("image" + strconv.Itoa(i))
 		if err != nil {
@@ -88,6 +90,8 @@ func AddSeekHelp(c *gin.Context) {
 		// 这里关闭的文件应该不总是最后一个吧(如果程序内存溢出可以考虑文件是否及时关闭)
 		defer file.Close()
 		imageFiles = append(imageFiles, file)
+		// 反正存的是二进制，具体的文件类型问题应该不大吧
+		imageFilesPath = append(imageFilesPath, config.Config.CodeFilePath+helper.GetUUID())
 	}
 	codeFile, _, err := c.Request.FormFile("codeFile")
 	if err != nil {
@@ -99,16 +103,12 @@ func AddSeekHelp(c *gin.Context) {
 		return
 	}
 	codeFilePath := config.Config.CodeFilePath + helper.GetUUID() + ".txt"
-	imageFilesPath := []string{}
-	for range imageFiles {
-		// 反正存的是二进制，具体的文件类型问题应该不大吧
-		imageFilesPath = append(imageFilesPath, config.Config.CodeFilePath+helper.GetUUID())
-	}
 	err = models.DB.Transaction(func(tx *gorm.DB) error {
 		// 不懂没有seekHelpId直接追加关联可不可以
 		err = tx.Model(&models.Users{ID: userId}).Association("SeekHelps").Append(
 			&models.SeekHelps{
 				Reward:     reward,
+				Title:      title,
 				CreateTime: uploadTime,
 				CodePath:   codeFilePath,
 				Language:   language,
